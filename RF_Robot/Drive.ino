@@ -3,23 +3,23 @@
  * a value of 255 isfull forward and a value of 0 is full reverse. The motors are
  * disables automatically after 2 seconds.
  *
- * @param wheel Address of the wheel
+*  @param wheel Address of the wheel
  * @param driveSpeed Speed of the left motor
  */
-void drive(byte wheel, int driveSpeed)
+void drive(byte address, int driveSpeed)
 {
-  Wire.beginTransmission(MD25ADDRESS);                    // Drive motor 2 at speed value stored in x
-  Wire.write(wheel);
+  Wire.beginTransmission(MD25ADDRESS);
+  Wire.write(address);
   Wire.write(driveSpeed);
   Wire.endTransmission();
 }
 
 void driveRight(int driveSpeed) {
-  drive(SPEED2, driveSpeed);
+  drive(SPEED1, driveSpeed);
 }
 
 void driveLeft(int driveSpeed) {
-  drive(SPEED1, driveSpeed);
+  drive(SPEED2, driveSpeed);
 }
 
 void drive(int leftSpeed, int rightSpeed) {
@@ -28,14 +28,7 @@ void drive(int leftSpeed, int rightSpeed) {
 }
 
 /**
- * Stops the motors instantly.
- */
-void stopMotor() {
-  drive(StopSpeed, StopSpeed);
-}
-
-/**
- * Drive straight forward for a certain distance.
+ * Drive straight forward for a certain distance
  *
  * @param distance Distance in milimeters
  */
@@ -46,10 +39,17 @@ void DistanceDrive(int distance) //drive a distance straight in mm
   Serial.println(EncCalc);
   do {                                                       // Start loop to drive motors forward
     drive(DriveSpeed, DriveSpeed);
-    encoder(ENCODERONE);                                            // Calls a function that reads and displays value of encoder 1 to LCD03
+    encoder(ENCODERONE);                                             // Calls a function that reads and displays value of encoder 1 to LCD03
     encoder(ENCODERTWO);                                             // Calls a function that reads and displays value of encoder 2 to LCD03
   } while (EncCalc > encoder(ENCODERTWO) || EncCalc > encoder(ENCODERONE) );
   stopMotor();
+}
+
+/**
+ * Stops the motors instantly.
+ */
+void stopMotor() {                                          // Function to stop motors
+  drive(StopSpeed, StopSpeed);
 }
 
 /**
@@ -83,20 +83,20 @@ void Turn(int degree, int dir)
 }
 
 void SpeedControlReset() {                                       // This function disables the speedcontrol
-  writeToAddress(MD25ADDRESS, 0x30);                                        // Putting the value 0x30 to disable speed control
+  writeToAddress(0x30);                                         // Putting the value 0x30 to disable speed control
 }
 
 void SpeedControlEnable()
 { // This function enables the speedcontrol
-  writeToAddress(MD25ADDRESS, 0x31);                                        // Putting the value 0x31 to enable speed control
+  writeToAddress(0x31);                                         // Putting the value 0x31 to enable speed control
 }
 
 void encodeReset() {                                       // This function resets the encoder values to 0
-  writeToAddress(MD25ADDRESS, 0x20);                                        // Putting the value 0x20 to reset encoders
+  writeToAddress(0x20);                                         // Putting the value 0x20 to reset encoders
 }
 
-void writeToAddress(byte address, byte message) {
-  Wire.beginTransmission(address);
+void writeToAddress(byte message) {
+  Wire.beginTransmission(MD25ADDRESS);
   Wire.write(CMD);
   Wire.write(message);                                         // Putting the value 0x20 to reset encoders
   Wire.endTransmission();

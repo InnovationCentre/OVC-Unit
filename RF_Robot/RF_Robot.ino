@@ -41,8 +41,8 @@ int OUT_Checksum = 0;
 
 #define CMD                 (byte)0x10                        // Values of 0 eing sent using write have to be cast as a byte to stop them being misinterperted as NULL
 #define MD25ADDRESS         0x58                              // Address of the MD25
-#define SPEED1              (byte)0x00                        // Byte to send speed to first motor
-#define SPEED2              0x01                              // Byte to send speed to second motor
+const byte SPEED1  =            (byte)0x00;                        // Byte to send speed to first motor
+const byte SPEED2   =           0x01;                              // Byte to send speed to second motor
 #define ENCODERONE          0x02                              // Byte to read motor encoder 1
 #define ENCODERTWO          0x06                              // Byte to read motor encoder 2
 #define VOLTREAD            0x0A                              // Byte to read battery volts
