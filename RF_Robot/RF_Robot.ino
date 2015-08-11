@@ -49,6 +49,7 @@ int OUT_Checksum = 0;
 #define RESETENCODERS       0x20                              // Byte to reset encoders
 
 #define DriveSpeed 250  //standard drive speed
+#define DriveReverseSpeed 4  //standard drive speed
 #define StopSpeed 128   //standard stop speed (255 full forward, 0 full reverse)
 #define TurnConst 30
 #define PPT 360 //360 pulses per turn
@@ -58,7 +59,7 @@ int OUT_Checksum = 0;
 void setup () {
   Wire.begin();
   Serial.begin(9600);                                       // Begin serial
-  Serial.println("start programm");
+  Serial.println("Start program");
   encodeReset();                                            // Cals a function that resets the encoder values to 0
   delay(50);
   SpeedControlReset();

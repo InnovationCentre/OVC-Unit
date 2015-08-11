@@ -19,22 +19,22 @@ void handleMove() {
 
   case 0: //drive forward
     logMessage("Value1: Forward");
-    Drive(DriveSpeed, DriveSpeed);
+    drive(DriveSpeed, DriveSpeed);
     break;
 
   case 1: //drive reverse
     logMessage("Value1: Reverse");
-    Drive(56, 56);
+    drive(DriveReverseSpeed, DriveReverseSpeed);
     break;
 
   case 2: //drive right
     logMessage("Value1: Right");
-    Drive(56, DriveSpeed);
+    drive(DriveReverseSpeed, DriveSpeed);
     break;
 
   case 3: //drive left
     logMessage("Value1: Left");
-    Drive(DriveSpeed, 56);
+    drive(DriveSpeed, DriveReverseSpeed);
     break;
   }
 }
