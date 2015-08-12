@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <Wire.h>
 
-//Communication 
+//Communication
 const int robotId = 1;
 const int broadcastId = 9;
 long IN_Raw_Value;
@@ -41,8 +41,8 @@ int OUT_Checksum = 0;
 
 #define CMD                 (byte)0x10                        // Values of 0 eing sent using write have to be cast as a byte to stop them being misinterperted as NULL
 #define MD25ADDRESS         0x58                              // Address of the MD25
-const byte SPEED1  =            (byte)0x00;                        // Byte to send speed to first motor
-const byte SPEED2   =           0x01;                              // Byte to send speed to second motor
+const byte SPEED1 = (byte)0x00;                        // Byte to send speed to first motor
+const byte SPEED2 = 0x01;                              // Byte to send speed to second motor
 #define ENCODERONE          0x02                              // Byte to read motor encoder 1
 #define ENCODERTWO          0x06                              // Byte to read motor encoder 2
 #define VOLTREAD            0x0A                              // Byte to read battery volts
@@ -56,86 +56,69 @@ const byte SPEED2   =           0x01;                              // Byte to se
 #define WheelDiameter 100 //100mm diameter
 #define WheelWidth 470 //distance between middle of wheels
 
-void setup () {
-  Wire.begin();
-  Serial.begin(9600);                                       // Begin serial
-  Serial.println("Start program");
-  encodeReset();                                            // Cals a function that resets the encoder values to 0
-  delay(50);
-  SpeedControlReset();
-  delay(50);                                                // Wait for everything to power up
-  mySwitch.enableReceive(0);
+#define powerLed 3
+#define drivingLed 4
+
+void setup() {
+
+	pinMode(drivingLed, OUTPUT);
+	pinMode(powerLed, OUTPUT);
+	digitalWrite(powerLed, HIGH);
+
+	Wire.begin();
+	Serial.begin(9600);                                       // Begin serial
+	Serial.println("Start program");
+	encodeReset();                                            // Cals a function that resets the encoder values to 0
+	delay(50);
+	SpeedControlReset();
+	delay(50);                                                // Wait for everything to power up
+	mySwitch.enableReceive(0);
 }
 
 void loop() {
-
-  if (mySwitch.available()) {
-    Serial.print("Received message: ");
-    Serial.println( mySwitch.getReceivedValue() );
-    readMessage();
-
-    if (IN_Checksum == calculateChecksum(IN_ReceiverID, IN_SenderID, IN_MessageID, IN_Value1, IN_Value2, IN_Value3)) { //Message is valid
-      Serial.print("Message ");
-      Serial.print(Message);
-      Serial.println(" is a valid message");
-
-      if (IN_ReceiverID == robotId || IN_ReceiverID == broadcastId) { //Message is send to this robot
-
-        OUT_ReceiverID = IN_SenderID;
-        OUT_MessageID = 8;
-        
-        switch (IN_MessageID)  { //Command type
-
-        case 0: //Ping
-          writeOUT_Values(0,IN_Checksum,0);
-          break;
-        case 1: //Battery status
-          //Read battery 12 V or 24 V according to variable "IN_Value1".
-          //Read percentage between 0 and 99;
-          //Split as two numbers;
-          //Write to these variables
-          writeOUT_Values(5,5,IN_Checksum);
-          OUT_MessageID = 1;
-          break;
-        case 2: //Go to Home
-          writeOUT_Values(2,IN_Value1,IN_Checksum);
-          break;
-        case 3: //GoTo <location>
-          writeOUT_Values(3,IN_Checksum,0);
-          break;
-        case 4: //Move <direction> <amount>
-          writeOUT_Values(4,IN_Checksum,0);
-          handleMove();
-          break;
-        }
-        
-        OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
-      } 
-      
-      else {
-        logMessage("Message is not for this robot");
-      }
-      
-    } 
-    
-    else {
-      logMessage("Message is not valid");
-      resetMessage();
-    }
-    
-    mySwitch.resetAvailable();
-  
-  }
-  
+	if (mySwitch.available()) {
+		handleMessage();
+		mySwitch.resetAvailable();
+	}
 }
-
 
 /**
  * Show messages at Serialmonitor when debugging is enabled
  */
 void logMessage(String message) {
-  if (debug) {
-    Serial.println(message);
-  }
+	if (debug) {
+		Serial.println(message);
+	}
 }
 
+/**
+* Blink a LED for a certain amount of time
+*
+* @param timeToBlink Time in mili-seconds of how the LED should blink
+* @param driveSpeed ledPin Pin number of which LED should blink
+*/
+void blinkForTime(long timeToBlink, int ledPin) {
+	logMessage("Start blinking");
+	unsigned long startTime = millis();
+	long previousMillis = 0;
+	boolean ledState = false;
+
+	while (millis() - startTime <= timeToBlink) {
+
+		unsigned long currentMillis = millis();
+
+		if (millis() - previousMillis > 500) {
+			previousMillis = currentMillis;
+
+			if (ledState) {
+				digitalWrite(ledPin, LOW);
+			}
+			else {
+				digitalWrite(ledPin, HIGH);
+			}
+			ledState = !ledState;
+		}
+	}
+
+	logMessage("End blinking");
+}
