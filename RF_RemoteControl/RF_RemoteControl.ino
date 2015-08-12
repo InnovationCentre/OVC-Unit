@@ -61,13 +61,8 @@ void loop() {
 		createMoveCommand(2);
 	}
 	if (digitalRead(leftButton) == HIGH) {
-		createMoveCommand();
+		createMoveCommand(3);
 	}
-
-	//mySwitch.send(5393, 24);
-	//delay(1000);
-	//mySwitch.send(5396, 24);
-	//delay(1000);
 }
 
 void createMoveCommand(int direction) {
