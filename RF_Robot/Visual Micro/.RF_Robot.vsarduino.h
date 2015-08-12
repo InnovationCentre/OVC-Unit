@@ -84,6 +84,7 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <RF_Robot.ino>
+#include <Communication.h>
 #include <Communication.ino>
 #include <Drive.ino>
 #include <RCSwitch.cpp>

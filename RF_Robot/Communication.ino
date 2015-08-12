@@ -4,7 +4,7 @@
  */
 void handleMessage() {
 	Serial.print("Received message: ");
-	Serial.println(mySwitch.getReceivedValue());
+	Serial.println(receiver.getReceivedValue());
 
 	readMessage();
 
@@ -14,38 +14,8 @@ void handleMessage() {
 		Serial.println(" is a valid message");
 
 		if (IN_ReceiverID == robotId || IN_ReceiverID == broadcastId) { //Message is send to this robot
-
-			OUT_ReceiverID = IN_SenderID;
-			OUT_MessageID = 8;
-
-			switch (IN_MessageID) { //Command type
-
-			case 0: //Ping
-				writeOUT_Values(0, IN_Checksum, 0);
-				break;
-			case 1: //Battery status
-			  //Read battery 12 V or 24 V according to variable "IN_Value1".
-			  //Read percentage between 0 and 99;
-			  //Split as two numbers;
-			  //Write to these variables
-				writeOUT_Values(5, 5, IN_Checksum);
-				OUT_MessageID = 1;
-				break;
-			case 2: //Go to Home
-				writeOUT_Values(2, IN_Value1, IN_Checksum);
-				break;
-			case 3: //GoTo <location>
-				writeOUT_Values(3, IN_Checksum, 0);
-				break;
-			case 4: //Move <direction> <amount>
-				writeOUT_Values(4, IN_Checksum, 0);
-				handleMove();
-				break;
-			}
-
-			OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
+			handleAcknowledge();
 		}
-
 		else {
 			logMessage("Message is not for this robot");
 		}
@@ -58,21 +28,71 @@ void handleMessage() {
 	}
 }
 
+/**
+* Handles all commands which require an acknowledge-message.
+*
+* <direction>:
+*
+* 0 - Ping
+* 1 - Send battery status
+* 2 - Go to home
+* 3 - GoTo <location>
+*/
+void handleAcknowledge() {
+	OUT_ReceiverID = IN_SenderID;
+	OUT_MessageID = 8;
+
+	switch (IN_MessageID) { //Command type
+
+	case 0: //Ping
+		handleAcknowledge(0);
+		break;
+	case 1: //Battery status
+			//Read battery 12 V or 24 V according to variable "IN_Value1".
+			//Read percentage between 0 and 99;
+			//Split as two numbers;
+			//Write to these variables
+		//writeOUT_Values(5, 5, IN_Checksum);
+		//OUT_MessageID = 1;
+		break;
+	case 2: //Go to Home
+		//writeOUT_Values(2, IN_Value1, IN_Checksum);
+		break;
+	case 3: //GoTo <location>
+		//writeOUT_Values(3, IN_Checksum, 0);
+		break;
+	case 4: //Move <direction> <amount>
+		//writeOUT_Values(4, IN_Checksum, 0);
+		handleMove();
+		handleAcknowledge(4);
+		break;
+	}
+
+	OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
+}
+
+void handleAcknowledge(int messageId) {
+	writeOUT_Values(messageId, IN_Checksum, 0);
+
+	OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
+	logMessage("Sending move acknowledge command");
+	sendMessage();
+}
 
 /**
- * Handles the 'move <direction> <amount>'-command.
- *
- * <direction>:
- *
- * 0 - Straigt forward
- * 1 - Backwards
- * 2 - Right
- * 3 - Left
- *
- * <amount>: amount in centimeters to drive.
- *
- * distance in cm = 2 x (amount +1)
- */
+* Handles the 'move <direction> <amount>'-command.
+*
+* <direction>:
+*
+* 0 - Straigt forward
+* 1 - Backwards
+* 2 - Right
+* 3 - Left
+*
+* <amount>: amount in centimeters to drive.
+*
+* distance in cm = 2 x (amount +1)
+*/
 void handleMove() {
 	logMessage("MessageID: Drive");
 
@@ -100,66 +120,31 @@ void handleMove() {
 	}
 }
 
-/**
- * Calculates the checksum for the given parameters. The checksum is equal
- * to the modulo of 8 of the total sum of all parameters.
- *
- * checksum = (sum(parameters) % 8)
- */
-int calculateChecksum(int ReceiverID, int SenderID, int MessageID, int Value1, int Value2, int Value3) {
-	int sum = (ReceiverID + SenderID + MessageID + Value1 + Value2 + Value3);
-	int modulo = (sum % 8);
-	return modulo;
-}
-
 void sendMessage() {
-	Serial.println(OUT_ReceiverID + OUT_SenderID + OUT_MessageID + OUT_Value1 + OUT_Value2 + OUT_Value3 + OUT_Checksum);
+	long message = calculateMessage(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3, OUT_Checksum);
+	sender.send(message, 24);
+	resetMessage();
 }
 
-/**
- * Read the incomming message and split it to seperate variables0
- */
-void readMessage() {
-
-	IN_Raw_Value = mySwitch.getReceivedValue();
-	String stringmessage = String(IN_Raw_Value);
-	stringmessage.toCharArray(Message, 8);
-
-	IN_ReceiverID = Message[0] - '0';
-	IN_SenderID = Message[1] - '0';
-	IN_MessageID = Message[2] - '0';
-	IN_Value1 = Message[3] - '0';
-	IN_Value2 = Message[4] - '0';
-	IN_Value3 = Message[5] - '0';
-	IN_Checksum = Message[6] - '0';
-}
-
-/**
- * Reset the incomming message variable to 0
- */
-void resetMessage() {
-	IN_Raw_Value = 00000000;
-	readMessage();
-}
-
-/**
- * Sets the output values of the outgoing message
- */
-void writeOUT_Values(int Value1, int Value2, int Value3) {
-	OUT_Value1 = Value1;
-	OUT_Value2 = Value2;
-	OUT_Value3 = Value3;
+long calculateMessage(long receiverId, long senderId, long messageId, long value1, long value2, long value3, long checksum) {
+	return (receiverId * 1000000)
+		+ (senderId * 100000)
+		+ (messageId * 10000)
+		+ (value1 * 1000)
+		+ (value2 * 100)
+		+ (value3 * 10)
+		+ (checksum);
 }
 
 /**
  * Handles the ping command. When a ping message is receiver, an acknowledge is returned.
  */
-void handlePing() {
+void sendPingCommand() {
 	OUT_ReceiverID = 8;
 	OUT_MessageID = 0;
 	writeOUT_Values(0, 0, 0);
 	OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
-	logMessage("Sending Ping");
+	logMessage("Sending Ping request command");
 	sendMessage();
 }
 
@@ -185,4 +170,50 @@ void ErrorStop() {
 	OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
 	logMessage("Sending Error");
 	sendMessage();
+}
+
+/**
+* Read the incomming message and split it to seperate variables0
+*/
+void readMessage() {
+	IN_Raw_Value = receiver.getReceivedValue();
+	String stringmessage = String(IN_Raw_Value);
+	stringmessage.toCharArray(Message, 8);
+
+	IN_ReceiverID = Message[0] - '0';
+	IN_SenderID = Message[1] - '0';
+	IN_MessageID = Message[2] - '0';
+	IN_Value1 = Message[3] - '0';
+	IN_Value2 = Message[4] - '0';
+	IN_Value3 = Message[5] - '0';
+	IN_Checksum = Message[6] - '0';
+}
+
+/**
+* Reset the incomming message variable to 0
+*/
+void resetMessage() {
+	IN_Raw_Value = 00000000;
+	readMessage();
+}
+
+/**
+* Sets the output values of the outgoing message
+*/
+void writeOUT_Values(long Value1, long Value2, long Value3) {
+	OUT_Value1 = Value1;
+	OUT_Value2 = Value2;
+	OUT_Value3 = Value3;
+}
+
+/**
+* Calculates the checksum for the given parameters. The checksum is equal
+* to the modulo of 8 of the total sum of all parameters.
+*
+* checksum = (sum(parameters) % 8)
+*/
+long calculateChecksum(long ReceiverID, long SenderID, long MessageID, long Value1, long Value2, long Value3) {
+	long sum = (ReceiverID + SenderID + MessageID + Value1 + Value2 + Value3);
+	long modulo = (sum % 8);
+	return modulo;
 }

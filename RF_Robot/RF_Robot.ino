@@ -8,7 +8,8 @@ const int robotId = 1;
 const int broadcastId = 9;
 long IN_Raw_Value;
 char Message[8];
-RCSwitch mySwitch = RCSwitch();
+RCSwitch receiver = RCSwitch();
+RCSwitch sender = RCSwitch();
 
 //Debug enables or disables Serial Monitor messages
 boolean debug = true;
@@ -23,13 +24,13 @@ int IN_Value3 = 0;
 int IN_Checksum = 0;
 
 //Comminucation outgoing message
-int OUT_ReceiverID = 0;
+long OUT_ReceiverID = 0;
 #define OUT_SenderID 1
-int OUT_MessageID = 0;
-int OUT_Value1 = 0;
-int OUT_Value2 = 0;
-int OUT_Value3 = 0;
-int OUT_Checksum = 0;
+long OUT_MessageID = 0;
+long OUT_Value1 = 0;
+long OUT_Value2 = 0;
+long OUT_Value3 = 0;
+long OUT_Checksum = 0;
 
 //Motor shield controller
 #define ENL 3     											//analog PWM port Left
@@ -66,19 +67,21 @@ void setup() {
 	digitalWrite(powerLed, HIGH);
 
 	Wire.begin();
-	Serial.begin(9600);                                       // Begin serial
+	Serial.begin(9600);										// Begin serial
 	Serial.println("Start program");
-	encodeReset();                                            // Cals a function that resets the encoder values to 0
+	encodeReset();											// Cals a function that resets the encoder values to 0
 	delay(50);
 	SpeedControlReset();
-	delay(50);                                                // Wait for everything to power up
-	mySwitch.enableReceive(0);
+	delay(50);												// Wait for everything to power up
+
+	receiver.enableReceive(0);								// Enable receiving of messages via RF on interrupt pin 0 (Arduino Mega pin 2)
+	sender.enableTransmit(10);								// Transmitter is connected to Arduino Pin #10
 }
 
 void loop() {
-	if (mySwitch.available()) {
+	if (receiver.available()) {
 		handleMessage();
-		mySwitch.resetAvailable();
+		receiver.resetAvailable();
 	}
 }
 

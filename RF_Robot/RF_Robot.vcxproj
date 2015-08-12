@@ -136,6 +136,7 @@
     <ClCompile Include="RCSwitch.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Communication.h" />
     <ClInclude Include="RCSwitch.h">
       <FileType>CppCode</FileType>
     </ClInclude>
