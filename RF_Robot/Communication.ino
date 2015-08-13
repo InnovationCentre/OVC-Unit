@@ -19,9 +19,7 @@ void handleMessage() {
 		else {
 			logMessage("Message is not for this robot");
 		}
-
 	}
-
 	else {
 		logMessage("Message is not valid");
 		resetMessage();
@@ -73,9 +71,10 @@ void handleAcknowledge() {
 
 void handleAcknowledge(int messageId) {
 	writeOUT_Values(messageId, IN_Checksum, 0);
-
 	OUT_Checksum = calculateChecksum(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3);
-	logMessage("Sending move acknowledge command");
+	
+	Serial.print("Sending acknowledge command: ");
+	Serial.println(calculateMessage(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3, OUT_Checksum));
 	sendMessage();
 }
 
@@ -120,12 +119,25 @@ void handleMove() {
 	}
 }
 
+/**
+* Send message with the default OUT_-attributes. After the message is send, the OUT values are reset.
+*/
 void sendMessage() {
-	long message = calculateMessage(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3, OUT_Checksum);
+	sendMessage(OUT_ReceiverID, OUT_SenderID, OUT_MessageID, OUT_Value1, OUT_Value2, OUT_Value3, OUT_Checksum);
+}
+
+/**
+* Send message. After the message is send, the OUT values are reset.
+*/
+void sendMessage(long receiverId, long senderId, long messageId, long value1, long value2, long value3, long checksum) {
+	long message = calculateMessage(receiverId, senderId, messageId, value1, value2, value3, checksum);
 	sender.send(message, 24);
 	resetMessage();
 }
 
+/**
+* Calculate the message based on the given attirubtes.
+*/
 long calculateMessage(long receiverId, long senderId, long messageId, long value1, long value2, long value3, long checksum) {
 	return (receiverId * 1000000)
 		+ (senderId * 100000)
